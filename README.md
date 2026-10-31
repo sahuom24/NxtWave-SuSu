@@ -5,91 +5,98 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-High_Performance-009688.svg)](https://fastapi.tiangolo.com/)
 [![Open-Meteo](https://img.shields.io/badge/Open--Meteo-Live_Agro_API-green.svg)](https://open-meteo.com/)
 [![OSRM](https://img.shields.io/badge/OSRM-Real_Road_Routing-orange.svg)](https://project-osrm.org/)
+[![Agmarknet](https://img.shields.io/badge/Agmarknet-Ministry_of_Agriculture-red.svg)](https://agmarknet.gov.in/)
 [![Forge'26](https://img.shields.io/badge/Forge'26-Theme_2_Climate_&_Supply-emerald.svg)](https://launchpad-hackathons.nxtwave.tech/hackathons/forge26)
 
 > **Forge'26 Gen AI Buildathon Submission**  
 > **Team Name**: SuSu (Team Code: `52XENX`)  
 > **Institution**: Indian Institute of Technology Delhi (IIT Delhi)  
 > **Track**: Theme 2 — Climate, Resource Infrastructure & Global Supply Resilience  
+> **Live Prototype URL**: *[Deploying to Render / Hugging Face — Local preview at http://127.0.0.1:8000]*
 
 ---
 
 ## 📌 1. Problem Statement & Real-World Context
 
 ### Target Issue
-Indian agriculture and food supply chains lose **over ₹92,000 Crore annually** due to unpredictable, extreme micro-climate anomalies (unseasonal hail, sudden pre-harvest downpours, heatwaves) and severe market information asymmetry:
-1. **Micro-Climate Blindspots**: Weather alerts are typically district-wide and fail to assess hyper-local topsoil moisture saturation or crop-stage fungal incubation windows.
-2. **Distress Selling & Mandi Arbitrage**: Smallholder farmers routinely sell at distress prices at their local APMC, unaware that an APMC 35 km away is trading at a premium that significantly exceeds freight costs.
-3. **Logistics Vulnerability**: When flash downpours occur, primary road corridors flood, stranding perishable grain or vegetable cargo and causing 100% stock spoilage.
+Indian agriculture and food supply chains lose **over ₹92,000 Crore annually** in harvest and post-harvest produce (Source: *ICAR - Central Institute of Post-Harvest Engineering and Technology (CIPHET) National Study*), exacerbated by extreme micro-climate volatility and market information asymmetry:
+1. **Micro-Climate Blindspots**: Generic district-level weather alerts fail to calculate hyper-local topsoil moisture saturation or crop-stage fungal spore incubation windows.
+2. **Distress Selling & Mandi Arbitrage**: Smallholder farmers routinely sell at distress prices at their nearest APMC, unaware that a neighboring market 35 km away is trading at a premium that significantly exceeds transport freight costs.
+3. **Logistics Paralysis**: When sudden unseasonal downpours strike, low-lying rural arterial highways flood, stalling transport vehicles and resulting in 100% perishable cargo spoilage.
 
 ### Target Audience
-* **Smallholder Farmers & Producer Groups (FPOs)** across India's agricultural belts (Punjab, Maharashtra, UP, Andhra Pradesh, Rajasthan, etc.).
-* **Agritech Logistics Dispatchers & Warehousing Cooperatives** managing regional food supply resilience.
+* **Smallholder Farmers & Farmer Producer Organizations (FPOs)** across key agricultural belts (Punjab, Maharashtra, UP, Andhra Pradesh, Rajasthan, Karnataka).
+* **Agri-Logistics Dispatchers & Warehousing Cooperatives** managing regional food supply resilience.
 
 ---
 
-## 💡 2. Solution Overview: KisanKavach Swarm
+## 💡 2. Solution: KisanKavach Autonomous Swarm
 
-**KisanKavach** is an autonomous multi-agent intelligence and execution swarm that unifies **hyper-local agro-meteorology, APMC market economics, multimodal plant vision, and real-world road logistics rerouting**:
-
-* 🛰️ **Autonomous Agro-Climate Risk Agent**: Queries real-time hourly telemetry (soil moisture at 0–7cm & 7–28cm, precipitation probability, vapor pressure deficit) from the **Open-Meteo Agricultural API** to detect crop-specific disease windows and tractor trafficability.
-* 💰 **Mandi Economic Arbitrage Agent**: Computes real-time price dispersion across APMC mandis, models transport freight costs (diesel, loading, distance), and advises whether to harvest immediately, deposit in WDRA warehouses with e-NWR financing, or dispatch to a higher-yielding market.
-* 🚚 **Emergency Supply Logistics Agent**: Integrates the **OSRM (Open Source Routing Machine)** road network engine. If impending severe rain or flooding is detected on the primary arterial highway, it dynamically calculates an emergency safe transit corridor to secondary mandis or storage godowns.
-* 🔬 **Multimodal Plant Vision Diagnostician**: Accepts smartphone leaf photos, classifies crop pathogens (Yellow Rust, Leaf Blight, Leaf Curl, Powdery Mildew), and correlates pathology with live micro-climate humidity.
-* 🗣️ **Vernacular Voice First**: Generates instant, natural voice directives in **Hindi and English** so farmers can interact seamlessly without typing.
-
----
-
-## 🏛️ 3. Technical System Architecture
+**KisanKavach** is an autonomous multi-agent state graph that unifies **hyper-local agro-meteorology, APMC market economics, physical highway corridor weather sampling, and vernacular voice guidance**:
 
 ```mermaid
 flowchart TD
-    User["👨‍🌾 Farmer / Cooperative Manager<br>(Voice / Text / Crop Photo / GPS)"] --> Gateway["API Gateway / FastAPI Backend"]
+    User["👨‍🌾 Farmer / FPO Manager<br>(Voice / Location / Crop Photo / GPS)"] --> Gateway["API Gateway / FastAPI Backend"]
     
-    Gateway --> Orchestrator["🧠 Agro-Swarm Supervisor Agent<br>(Query Decomposition & State Graph)"]
+    Gateway --> Orchestrator["🧠 Supervisor Agent (ReAct State Graph)<br>Plan -> Dispatch -> Reflect -> Self-Correct"]
     
-    subgraph Swarm ["Autonomous Specialized Agent Swarm"]
-        Orchestrator --> Agent1["🛰️ Climate & Soil Risk Agent<br>Tools: Open-Meteo Agro API<br>Output: Soil saturation, blight/frost risk"]
-        Orchestrator --> Agent2["💰 Mandi Arbitrage Agent<br>Tools: Real APMC Price Feeds<br>Output: Net realized profit after freight"]
-        Orchestrator --> Agent3["🚚 Emergency Supply Logistics Agent<br>Tools: OSRM Routing + Hazard Mask<br>Output: Safe rerouted transit corridor"]
-        Orchestrator --> Agent4["🔬 Multimodal Vision & Plant Pathologist<br>Tools: Gemini Vision / Plant Pathology Model<br>Output: Crop disease diagnosis & organic remedy"]
+    subgraph Swarm ["Specialized Autonomous Execution Swarm"]
+        Orchestrator --> Agent1["🛰️ Climate & Soil Risk Agent<br>Tools: Open-Meteo Agro API<br>Telemetry: Soil saturation (0-7cm), rain window, fungal risk"]
+        Orchestrator --> Agent2["💰 Mandi Arbitrage Agent<br>Tools: Agmarknet APMC Feeds<br>Telemetry: Modal price spreads, diesel freight, net profit"]
+        Orchestrator --> Agent3["🚚 Logistics & Road Corridor Agent<br>Tools: OSRM + Multi-point Weather Sampling<br>Action: Samples highway checkpoints; reroutes around floods"]
+        Orchestrator --> Agent4["🔬 Multimodal Vision Diagnostician<br>Tools: Vision Model + IPM Knowledge Engine<br>Action: Classifies crop disease + KVK helpline referral"]
     end
     
-    Agent1 --> Synthesizer["⚖️ Synthesis & Guardrail Engine<br>(Cross-verification & Source Attribution)"]
-    Agent2 --> Synthesizer
-    Agent3 --> Synthesizer
-    Agent4 --> Synthesizer
+    Agent1 --> Guardrail{"⚖️ Reflection & Guardrail Engine"}
+    Agent2 --> Guardrail
+    Agent3 --> Guardrail
+    Agent4 --> Guardrail
+
+    Guardrail -- "Hazard Detected on Road" --> Orchestrator
+    Guardrail -- "Verified Safe" --> Synthesizer["Master Directive Synthesizer"]
     
-    Synthesizer --> Vernacular["🗣️ Multilingual Voice Engine<br>(Hindi, Telugu, Tamil, English)"]
-    Synthesizer --> MapEngine["🗺️ Live Interactive Geospatial Dashboard<br>(Leaflet, Weather Contours, Route Polylines)"]
+    Synthesizer --> Vernacular["🗣️ Vernacular Voice Engine<br>(Hindi & English Speech Synthesis)"]
+    Synthesizer --> MapEngine["🗺️ Interactive Command Dashboard<br>(Leaflet Map, Route Polylines, Thought Stream)"]
 ```
 
 ---
 
-## ⚡ 4. Strict Technical Compliance ("Zero Dummy Data" Policy)
+## 🔬 3. Technical Innovations & Key Differentiators
 
-KisanKavach strictly adheres to the hackathon's zero-tolerance policy against mock data:
-1. **Live Agricultural & Weather Telemetry**: Direct real-time calls to [Open-Meteo API](https://open-meteo.com/) for hyper-local coordinates (temperature, humidity, precipitation probability, multi-layer soil moisture).
-2. **Live Road Network & Geometries**: Real driving routes and GeoJSON polylines fetched on the fly from [OSRM (Open Source Routing Machine)](https://router.project-osrm.org/).
-3. **Live Geocoding**: Real-time administrative resolution down to village, tehsil, and district via [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/).
-4. **Active APMC Mandi Feeds**: Modal prices, minimums, maximums, and MSP benchmarks calibrated to active Indian APMC commodity arrivals.
+### A. Physical Highway Corridor Weather Sampling (OSRM + Open-Meteo)
+* Rather than assuming open road conditions, the **Logistics Agent** queries OSRM for exact driving route polylines, samples evenly-spaced geographic checkpoints along the physical highway, and executes batch weather queries on Open-Meteo along the transit corridor.
+* If any highway checkpoint reports heavy precipitation (>20mm) or flood conditions, the agent **autonomously self-corrects**, overrides the default path, calculates a safe alternative corridor to a secondary terminal, and verifies that the alternative route is clear.
+
+### B. ReAct Supervisor State Graph with Self-Correction
+* The orchestrator is not a linear sequential pipeline. It maintains execution state, evaluates intermediate observations against agronomical guardrails, and triggers self-correction:
+  * **Out-of-boundary Geocoding**: Snaps to valid agricultural corridors if coordinates fall outside territory.
+  * **Hazard Avoidance**: Reroutes logistics transit if corridor weather triggers safety alerts.
+  * **Uncertainty Fallback**: If vision confidence is below threshold, automatically routes the farmer to the nearest Krishi Vigyan Kendra (KVK) or Kisan Call Centre (1800-180-1551).
 
 ---
 
-## 🚀 5. Getting Started & Local Installation
+## 📊 4. Live Data Sources & Zero Dummy Data Policy
 
-### Prerequisites
-- Python 3.10+ (Python 3.12 recommended)
-- Git
+KisanKavach strictly operates on real-time open APIs and official government agricultural bulletins:
 
-### Quick Setup
+| Subsystem | Data Provider | Endpoint / Mechanism | Parameters Ingested | Refresh Cadence |
+| :--- | :--- | :--- | :--- | :--- |
+| **Agro-Weather Telemetry** | [Open-Meteo](https://open-meteo.com/) | `api.open-meteo.com/v1/forecast` | Temp, humidity, 48h rain sum, 0–7cm soil moisture | Real-time (Hourly) |
+| **Highway Corridor Weather** | [Open-Meteo Multi-Point](https://open-meteo.com/) | Batch coordinate queries along polyline | Precipitation and wind speeds across road checkpoints | Real-time (Hourly) |
+| **Geospatial Resolution** | [OpenStreetMap](https://nominatim.openstreetmap.org/) | `nominatim.openstreetmap.org/reverse` | Village, Tehsil, District, State | Live (Sub-second) |
+| **Road Network Logistics** | [OSRM Project](https://project-osrm.org/) | `router.project-osrm.org/route/v1/driving` | Driving distance, duration, turn geometry, GeoJSON | Live (Real topology) |
+| **APMC Mandi Intelligence** | [AGMARKNET / DMI](https://agmarknet.gov.in/) | Official APMC Daily Commodity Records | Modal price, min/max price, arrival date, MSP benchmarks | Official Daily Records |
+
+---
+
+## 🚀 5. Quick Reproduction Steps
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/YOUR_USERNAME/KisanKavach.git
-cd KisanKavach
+git clone https://github.com/sahuom24/NxtWave-SuSu.git
+cd NxtWave-SuSu
 
-# 2. Create virtual environment
+# 2. Set up virtual environment
 python -m venv .venv
 
 # On Windows:
@@ -100,50 +107,21 @@ source .venv/bin/activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Run the application
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# 4. Start the application server
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-
-Open your browser at **`http://127.0.0.1:8000`** to view the live Command Center!
+Open **`http://127.0.0.1:8000`** in your browser.
 
 ---
 
-## 📂 6. Codebase Structure
+## ⚠️ 6. Known Limitations & Responsible AI Guardrails
 
-```
-KisanKavach/
-├── app/
-│   ├── main.py                     # FastAPI application & REST endpoints
-│   ├── agents/
-│   │   ├── swarm_orchestrator.py   # Master Supervisor & State Graph
-│   │   ├── climate_agent.py        # Agro-climate & soil risk evaluation
-│   │   ├── mandi_agent.py          # APMC arbitrage & net freight realization
-│   │   ├── logistics_agent.py      # Emergency OSRM road rerouting
-│   │   └── vision_agent.py         # Multimodal crop pathology diagnostician
-│   ├── tools/
-│   │   ├── weather_tool.py         # Live Open-Meteo Agricultural API client
-│   │   ├── geocoding_tool.py       # Live OpenStreetMap Nominatim client
-│   │   ├── mandi_tool.py           # Real APMC market pricing engine
-│   │   └── routing_tool.py         # Live OSRM road routing engine
-│   └── static/
-│       └── index.html              # Interactive Geospatial Command Center UI
-├── requirements.txt                # Production dependencies
-├── Procfile                        # Ready for 1-click cloud deployment
-├── README.md                       # Complete technical documentation
-└── PITCH_DECK.md                   # 5-Slide presentation deck outline
-```
+1. **Agmarknet Server Latency**: Direct calls to `data.gov.in` can experience network timeouts from certain hosting networks. The system automatically falls back to verified official AGMARKNET daily bulletin records timestamped and cited with date of arrival.
+2. **Road Flood Warnings**: Corridor hazard alerts currently evaluate real-time precipitation and runoff likelihood along highway checkpoints. Physical river gauge sensors (CWC) will be integrated in Phase 2.
+3. **Medical / Pesticide Caution**: Chemical IPM recommendations specify standard registered formulations (CIBRC guidelines). Farmers are instructed to verify dosages with their local KVK agronomist before application.
 
 ---
 
-## 🏆 7. Evaluation Rubric Alignment
-
-* **Technical Architecture & Engineering Depth (20/20)**: Modular micro-services, state graph coordination, live spatial GIS polyline rendering, and low-latency API pipelining.
-* **AI Reasoning & Agentic Execution (25/25)**: Explicit multi-step autonomous tool calls with live thought logging, agricultural domain guardrails, and verified source attribution.
-* **Problem Relevance, Impact & USP (25/25)**: Solves India's food waste and supply chain vulnerability by marrying micro-climate prediction with physical logistics rerouting and vernacular voice access.
-* **Live Demonstration & Robustness (30/30)**: 100% resilient, zero hardcoded dummy data, sub-second API execution, graceful error handling.
-
----
-
-## 👥 8. Team Overview
+## 👥 7. Team Overview
 * **Om** (Team Lead) — IIT Delhi (`mt1240764@iitd.ac.in`)
 * **Pragya Nanhera** — IIT Delhi (`mt1240674@iitd.ac.in`)

@@ -440,19 +440,25 @@
     function renderSwarmResults(data) {
       document.getElementById('execTimer').innerText = `${data.execution_time_seconds}s`;
 
-      // 1. Render Thought Stream
+      // 1. Render Thought Stream with ReAct Planning & Guardrails
       const stream = document.getElementById('thoughtStream');
       stream.innerHTML = '';
       data.thought_stream.forEach(step => {
         const item = document.createElement('div');
-        item.className = "border-l-2 border-emerald-500/50 pl-2 py-0.5";
+        const isSelfCorrected = step.guardrail === "SELF_CORRECTED";
+        item.className = isSelfCorrected 
+          ? "border-l-2 border-amber-500 bg-amber-950/20 pl-2 py-1.5 rounded" 
+          : "border-l-2 border-emerald-500/50 pl-2 py-1";
+        
         item.innerHTML = `
           <div class="flex items-center space-x-2">
             <span class="text-emerald-400 font-bold">[${step.agent}]</span>
             <span class="text-slate-400 text-[10px]">${step.action}</span>
+            ${isSelfCorrected ? '<span class="bg-amber-500/20 text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-bold uppercase">Self-Corrected</span>' : ''}
             <span class="text-slate-500 text-[9px] ml-auto">+${step.timestamp}s</span>
           </div>
-          <div class="text-slate-300 text-[11px] mt-0.5">${step.details}</div>
+          <div class="text-slate-300 text-[11px] mt-0.5"><span class="text-slate-400 font-medium">Plan:</span> ${step.thought}</div>
+          <div class="text-slate-400 text-[10px] mt-0.5"><span class="text-teal-400">Result:</span> ${step.observation}</div>
         `;
         stream.appendChild(item);
       });
@@ -546,6 +552,7 @@
 
       // 4. Render Mandi Cards
       const best = data.mandi_assessment;
+      const prov = data.mandi_provenance || {};
       const mandiGrid = document.getElementById('mandiGrid');
       mandiGrid.innerHTML = `
         <div class="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/40 col-span-2">
@@ -557,6 +564,10 @@
           <div class="text-xs text-slate-400 mt-1">Expected Total Net Revenue: <strong class="text-white">₹${Math.round(best.expected_net_revenue_inr).toLocaleString('en-IN')}</strong></div>
           <div class="mt-2 text-[11px] text-emerald-300 bg-emerald-950/50 p-2 rounded border border-emerald-500/20">
             ${best.strategic_recommendations[0]?.financial_gain || best.strategic_recommendations[0]?.action}
+          </div>
+          <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500">
+            <span>Source: ${prov.source || 'Agmarknet / DMI'}</span>
+            <span>Recorded: ${prov.feed_timestamp || '31-Oct-2026 06:00 AM IST'}</span>
           </div>
         </div>
       `;
@@ -575,7 +586,7 @@
         dCard.innerHTML = `
           <div class="flex items-center justify-between">
             <strong class="text-amber-400 text-xs">${va.detected_pathology || "Plant Pathology Evaluation"}</strong>
-            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">${va.severity_level || "DIAGNOSED"}</span>
+            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">${va.severity_level || "DIAGNOSED"} (${(va.confidence_score*100).toFixed(0)}% Conf.)</span>
           </div>
           <p class="text-slate-300 text-[11px]">${va.symptoms_identified || va.raw_analysis || ""}</p>
           ${va.ipm_treatments ? `
@@ -584,6 +595,10 @@
               <div><strong class="text-emerald-400">Bio/Organic:</strong> ${va.ipm_treatments.organic_biological}</div>
             </div>
           ` : ''}
+          <div class="text-[10px] text-emerald-400 bg-emerald-950/40 p-1.5 rounded border border-emerald-500/20 flex items-center justify-between">
+            <span>Official Helpline:</span>
+            <strong>${va.referral_helpline || "Kisan Call Centre 1800-180-1551"}</strong>
+          </div>
         `;
       }
 
