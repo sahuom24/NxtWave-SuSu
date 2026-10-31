@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KisanKavach (किसान कवच) — AgroResilience Swarm</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    #map { height: 420px; border-radius: 0.75rem; z-index: 10; }
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+        <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            KisanKavach <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-medium">किसान कवच</span>
+          </h1>
+          <span class="text-xs text-slate-400 hidden sm:inline">| AgroResilience Swarm</span>
+        </div>
+        <p class="text-xs text-slate-400">Autonomous Multimodal Climate Risk, Mandi Arbitrage & Supply Chain Swarm</p>
+      </div>
+    </div>
+
+    <!-- LIVE DATA STATUS BADGES -->
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <div class="flex items-center space-x-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-md">
+        <span class="pulse-dot bg-emerald-400"></span>
+        <span class="text-slate-300 font-medium">Open-Meteo Live</span>
+      </div>
+      <div class="flex items-center space-x-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-md">
+        <span class="pulse-dot bg-emerald-400"></span>
+        <span class="text-slate-300 font-medium">OSM Geocoding</span>
+      </div>
+      <div class="flex items-center space-x-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-md">
+        <span class="pulse-dot bg-emerald-400"></span>
+        <span class="text-slate-300 font-medium">OSRM Routing</span>
+      </div>
+      <div class="flex items-center space-x-1.5 bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-md">
+        <span class="pulse-dot bg-emerald-400"></span>
+        <span class="text-slate-300 font-medium">APMC Mandi Feed</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: CONTROLS & MAP (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col space-y-6">
+
+      <!-- SCENARIO & CONTROL PANEL -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-2 text-emerald-400 text-sm font-semibold">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            <span>Mission Parameters & Live Location</span>
+          </div>
+          <!-- PRESET SCENARIO BUTTONS -->
+          <div class="flex items-center space-x-1 text-xs">
+            <span class="text-slate-400 mr-1 hidden sm:inline">Presets:</span>
+            <button onclick="loadScenario('punjab')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-1 rounded transition">Punjab Wheat</button>
+            <button onclick="loadScenario('nashik')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-1 rounded transition">Nashik Onion</button>
+            <button onclick="loadScenario('guntur')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-1 rounded transition">Guntur Chilli</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Crop Selection -->
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Target Crop</label>
+            <select id="cropSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="Wheat">Wheat (गेंहू)</option>
+              <option value="Basmati Paddy">Basmati Paddy (बासमती धान)</option>
+              <option value="Paddy">Paddy / Rice (धान)</option>
+              <option value="Onion">Onion (प्याज)</option>
+              <option value="Tomato">Tomato (टमाटर)</option>
+              <option value="Mustard">Mustard (सरसों)</option>
+              <option value="Cotton">Cotton (कपास)</option>
+              <option value="Potato">Potato (आलू)</option>
+              <option value="Red Chilli">Red Chilli (लाल मिर्च)</option>
+            </select>
+          </div>
+
+          <!-- Quantity -->
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Harvest Quantity (Quintals)</label>
+            <input type="number" id="qtyInput" value="50" min="5" max="500" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+
+          <!-- Coordinates / Location -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-medium text-slate-400">Coordinates</label>
+              <button onclick="getUserLocation()" class="text-xs text-emerald-400 hover:underline flex items-center gap-1">
+                <i data-lucide="crosshair" class="w-3 h-3"></i> GPS
+              </button>
+            </div>
+            <div class="flex items-center space-x-1">
+              <input type="text" id="coordsInput" value="30.70, 76.21" placeholder="Lat, Lon" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs mono text-white focus:outline-none focus:border-emerald-500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SPECIAL CONTROLS: HAZARD TOGGLE & VOICE INPUT -->
+        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          <label class="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer select-none">
+            <input type="checkbox" id="hazardToggle" class="rounded bg-slate-800 border-slate-700 text-emerald-500 focus:ring-0 w-4 h-4" />
+            <span class="flex items-center gap-1 text-amber-300 font-medium">
+              <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i>
+              Simulate Severe Rain Hazard (Triggers Autonomous Logistics Rerouting)
+            </span>
+          </label>
+
+          <div class="flex items-center space-x-2">
+            <!-- Voice Input Button -->
+            <button id="voiceBtn" onclick="toggleVoiceInput()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+              <i data-lucide="mic" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span id="voiceBtnText">Speak (बोलो)</span>
+            </button>
+
+            <!-- Deploy Swarm Button -->
+            <button id="deployBtn" onclick="deploySwarm()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold px-5 py-2 rounded-lg text-sm shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition active:scale-95">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              <span>Deploy Swarm</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="voiceTranscript" class="text-xs text-emerald-300 mt-2 hidden italic"></div>
+      </div>
+
+      <!-- INTERACTIVE MAP & ROUTE VIEWER -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-400"></i>
+            <span class="font-semibold text-slate-200">Real-Time Geospatial & OSRM Routing Map</span>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] text-slate-400">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-blue-500 rounded-full inline-block"></span> Farm Origin</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block"></span> Target Mandi</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block"></span> Emergency Corridor</span>
+          </div>
+        </div>
+        <div id="map"></div>
+        <div id="routeBanner" class="text-xs text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800 hidden"></div>
+      </div>
+
+      <!-- MANDI COMPARISON TABLE / CARDS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+            <span>Live APMC Price Discovery & Net Freight Realization</span>
+          </h3>
+          <span id="mspBadge" class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700"></span>
+        </div>
+        <div id="mandiGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="text-slate-500 italic p-4 text-center col-span-2">Run swarm to fetch live regional mandi quotes.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: REASONING STREAM, ADVISORY & MULTIMODAL (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col space-y-6">
+
+      <!-- VERNACULAR VOICE ADVISOR & AUDIO SYNTHESIS -->
+      <div class="bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="volume-2" class="w-5 h-5 text-emerald-400"></i>
+            <h3 class="text-sm font-bold text-white">Vernacular Voice Directive (ध्वनि संदेश)</h3>
+          </div>
+          <span class="text-[11px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">Web Speech AI</span>
+        </div>
+
+        <p id="voiceScriptHindi" class="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800 mb-3">
+          सिस्टम तैयार है। "Deploy Swarm" पर क्लिक करें या बोलें।
+        </p>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="playAudio('hindi')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-xs flex items-center justify-center gap-2 transition">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>Play Hindi Audio (हिंदी में सुनें)</span>
+          </button>
+          <button onclick="playAudio('english')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2 rounded-lg text-xs flex items-center justify-center gap-2 transition border border-slate-700">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>Play English Audio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MULTIMODAL CROP LEAF PATHOLOGY -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+            <i data-lucide="scan" class="w-4 h-4 text-emerald-400"></i>
+            <span>Multimodal Crop Vision Diagnostician</span>
+          </h3>
+          <span class="text-[11px] text-slate-400">Vision + IPM</span>
+        </div>
+
+        <div class="border-2 border-dashed border-slate-800 hover:border-slate-700 rounded-xl p-4 text-center cursor-pointer transition relative bg-slate-950/40" onclick="document.getElementById('leafImageInput').click()">
+          <input type="file" id="leafImageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)" />
+          <div id="uploadPrompt" class="flex flex-col items-center space-y-1">
+            <i data-lucide="camera" class="w-6 h-6 text-slate-400"></i>
+            <span class="text-xs text-slate-300 font-medium">Click to upload crop/leaf image for pathology triage</span>
+            <span class="text-[10px] text-slate-500">Supports JPG, PNG | Correlates pathology with live micro-climate</span>
+          </div>
+          <div id="imagePreviewContainer" class="hidden flex items-center justify-center gap-3">
+            <img id="imagePreview" src="" alt="Crop Leaf" class="w-16 h-16 object-cover rounded-lg border border-slate-700" />
+            <div class="text-left text-xs text-slate-300">
+              <span class="font-medium text-emerald-400">Image Loaded</span>
+              <p class="text-[10px] text-slate-400">Ready for multimodal analysis</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="diagnosisCard" class="mt-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs hidden space-y-2">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- AGENT REASONING STREAM (THOUGHT STREAM) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col min-h-[300px]">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="terminal" class="w-4 h-4 text-teal-400"></i>
+            <h3 class="text-sm font-semibold text-white">Live Multi-Agent Reasoning Stream</h3>
+          </div>
+          <span id="execTimer" class="text-xs text-slate-400 mono">0.00s</span>
+        </div>
+
+        <div id="thoughtStream" class="flex-1 bg-slate-950 rounded-xl p-3 border border-slate-800 mono text-[11px] text-slate-300 overflow-y-auto max-h-[340px] custom-scroll space-y-2">
+          <div class="text-slate-500 italic">// Awaiting swarm initiation. Click "Deploy Swarm" to watch multi-agent tool execution in real-time.</div>
+        </div>
+      </div>
+
+      <!-- PRIORITIZED 48-HOUR ACTION CHECKLIST -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+          <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i>
+          <span>Prescriptive 48-Hour Field Action Plan</span>
+        </h3>
+        <div id="actionChecklist" class="space-y-2 text-xs">
+          <div class="text-slate-500 italic">No active directives.</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800 bg-slate-900/60 px-6 py-3 text-center text-xs text-slate-500">
+    KisanKavach Engine • Forge'26 Gen AI Buildathon • Team SuSu (IIT Delhi) • 100% Live Open APIs (Open-Meteo, OSM, OSRM, Agmarknet)
+  </footer>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Map Setup
+    let map = L.map('map').setView([30.707, 76.216], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = [];
+    let routeLayers = [];
+    let currentHindiScript = "";
+    let currentEnglishScript = "";
+    let uploadedImageBase64 = null;
+
+    const PRESETS = {
+      punjab: { lat: 30.90, lon: 75.85, crop: "Wheat", qty: 50 },
+      nashik: { lat: 20.00, lon: 74.00, crop: "Onion", qty: 80 },
+      guntur: { lat: 16.30, lon: 80.44, crop: "Red Chilli", qty: 25 }
+    };
+
+    function loadScenario(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      document.getElementById('coordsInput').value = `${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+      document.getElementById('cropSelect').value = p.crop;
+      document.getElementById('qtyInput').value = p.qty;
+      deploySwarm();
+    }
+
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          document.getElementById('coordsInput').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+          deploySwarm();
+        }, () => alert("Unable to fetch GPS. Using default coordinates."));
+      }
+    }
+
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        uploadedImageBase64 = evt.target.result;
+        document.getElementById('imagePreview').src = uploadedImageBase64;
+        document.getElementById('uploadPrompt').classList.add('hidden');
+        document.getElementById('imagePreviewContainer').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Web Speech API - Voice Input
+    let recognition = null;
+    function toggleVoiceInput() {
+      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        alert("Speech Recognition not supported in this browser. Please use Chrome/Edge.");
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'hi-IN'; // Default Hindi, also understands English
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          document.getElementById('voiceBtnText').innerText = "Listening...";
+          document.getElementById('voiceBtn').classList.add('bg-red-600', 'text-white');
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          const vt = document.getElementById('voiceTranscript');
+          vt.innerText = `Recognized Voice: "${transcript}"`;
+          vt.classList.remove('hidden');
+          
+          // Auto-detect crop from spoken words
+          const tLower = transcript.toLowerCase();
+          if (tLower.includes('गेंहू') || tLower.includes('wheat')) document.getElementById('cropSelect').value = "Wheat";
+          else if (tLower.includes('प्याज') || tLower.includes('onion')) document.getElementById('cropSelect').value = "Onion";
+          else if (tLower.includes('धान') || tLower.includes('paddy') || tLower.includes('chawal')) document.getElementById('cropSelect').value = "Basmati Paddy";
+          else if (tLower.includes('टमाटर') || tLower.includes('tomato')) document.getElementById('cropSelect').value = "Tomato";
+          else if (tLower.includes('मिर्च') || tLower.includes('chilli')) document.getElementById('cropSelect').value = "Red Chilli";
+          
+          deploySwarm();
+        };
+
+        recognition.onend = () => {
+          document.getElementById('voiceBtnText').innerText = "Speak (बोलो)";
+          document.getElementById('voiceBtn').classList.remove('bg-red-600', 'text-white');
+        };
+      }
+      recognition.start();
+    }
+
+    // Text to Speech
+    function playAudio(lang) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const text = lang === 'hindi' ? currentHindiScript : currentEnglishScript;
+      if (!text) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === 'hindi' ? 'hi-IN' : 'en-US';
+      utterance.rate = 0.95;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function deploySwarm() {
+      const coords = document.getElementById('coordsInput').value.split(',').map(s => parseFloat(s.trim()));
+      const lat = coords[0] || 30.70;
+      const lon = coords[1] || 76.21;
+      const crop = document.getElementById('cropSelect').value;
+      const qty = parseFloat(document.getElementById('qtyInput').value) || 50;
+      const hazard = document.getElementById('hazardToggle').checked;
+
+      const btn = document.getElementById('deployBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Executing Swarm...</span>`;
+      lucide.createIcons();
+
+      const stream = document.getElementById('thoughtStream');
+      stream.innerHTML = '<div class="text-teal-400 font-semibold">[SWARM INITIALIZED] Launching multi-agent execution pipeline...</div>';
+
+      try {
+        const resp = await fetch('/api/swarm/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lat: lat,
+            lon: lon,
+            crop: crop,
+            quantity_quintals: qty,
+            simulate_hazard: hazard,
+            image_base64: uploadedImageBase64
+          })
+        });
+
+        const data = await resp.json();
+        renderSwarmResults(data);
+      } catch (err) {
+        stream.innerHTML += `<div class="text-red-400">[ERROR] Execution failed: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="cpu" class="w-4 h-4"></i><span>Deploy Swarm</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    function renderSwarmResults(data) {
+      document.getElementById('execTimer').innerText = `${data.execution_time_seconds}s`;
+
+      // 1. Render Thought Stream
+      const stream = document.getElementById('thoughtStream');
+      stream.innerHTML = '';
+      data.thought_stream.forEach(step => {
+        const item = document.createElement('div');
+        item.className = "border-l-2 border-emerald-500/50 pl-2 py-0.5";
+        item.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-400 font-bold">[${step.agent}]</span>
+            <span class="text-slate-400 text-[10px]">${step.action}</span>
+            <span class="text-slate-500 text-[9px] ml-auto">+${step.timestamp}s</span>
+          </div>
+          <div class="text-slate-300 text-[11px] mt-0.5">${step.details}</div>
+        `;
+        stream.appendChild(item);
+      });
+      stream.scrollTop = stream.scrollHeight;
+
+      // 2. Render Voice Scripts
+      currentHindiScript = data.vernacular_voice_scripts.hindi;
+      currentEnglishScript = data.vernacular_voice_scripts.english;
+      document.getElementById('voiceScriptHindi').innerText = currentHindiScript;
+
+      // 3. Render Map Layers & Polylines
+      clearMap();
+      const originLat = data.location.lat;
+      const originLon = data.location.lon;
+
+      // Add Farm Origin Marker
+      const farmIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="bg-blue-600 text-white w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center font-bold text-xs">🏡</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      const originMarker = L.marker([originLat, originLon], { icon: farmIcon })
+        .addTo(map)
+        .bindPopup(`<b>Your Farm Origin</b><br>${data.location.village}, ${data.location.district}<br><span class="text-xs text-slate-500">${data.crop} (${data.quantity_quintals} Q)</span>`)
+        .openPopup();
+      markers.push(originMarker);
+
+      // Add Mandi Markers
+      const targetMandi = data.mandi_assessment.optimal_market;
+      const allMandis = data.all_nearby_mandis || [];
+      
+      const mandiIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="bg-emerald-600 text-white w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center font-bold text-xs">🏬</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+
+      allMandis.forEach(m => {
+        const isOptimal = m.mandi_name === targetMandi;
+        const iconHtml = isOptimal
+          ? `<div class="bg-amber-500 text-slate-950 w-9 h-9 rounded-full border-2 border-white shadow-xl flex items-center justify-center font-bold text-xs animate-bounce">⭐</div>`
+          : `<div class="bg-slate-700 text-white w-7 h-7 rounded-full border border-slate-400 shadow flex items-center justify-center font-bold text-[10px]">🏬</div>`;
+
+        const mIcon = L.divIcon({
+          className: 'custom-div-icon',
+          html: iconHtml,
+          iconSize: isOptimal ? [36, 36] : [28, 28],
+          iconAnchor: isOptimal ? [18, 18] : [14, 14]
+        });
+
+        const marker = L.marker([m.lat, m.lon], { icon: mIcon })
+          .addTo(map)
+          .bindPopup(`
+            <div class="text-xs">
+              <strong class="${isOptimal ? 'text-amber-600' : 'text-slate-800'}">${m.mandi_name}</strong><br>
+              District: ${m.district}, ${m.state}<br>
+              Distance: ${m.distance_km} km<br>
+              Modal Price: ₹${m.modal_price_qtl}/Qtl<br>
+              <strong>Net Realized: ₹${m.net_price_realized_qtl}/Qtl</strong>
+            </div>
+          `);
+        markers.push(marker);
+      });
+
+      // Draw routes
+      const log = data.logistics_assessment;
+      const routeBanner = document.getElementById('routeBanner');
+      routeBanner.classList.remove('hidden');
+      routeBanner.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="navigation" class="w-4 h-4 text-emerald-400"></i><span class="font-medium">${log.transit_summary}</span></div>`;
+
+      if (log.route_geojson) {
+        const primaryLayer = L.geoJSON(log.route_geojson, {
+          style: { color: '#3b82f6', weight: 5, opacity: 0.85 }
+        }).addTo(map);
+        routeLayers.push(primaryLayer);
+        map.fitBounds(primaryLayer.getBounds(), { padding: [50, 50] });
+      } else if (log.safe_route_geojson) {
+        // Emergency rerouting active
+        const primaryCompromised = L.geoJSON(log.primary_route_geojson, {
+          style: { color: '#ef4444', weight: 4, opacity: 0.6, dashArray: '6, 6' }
+        }).addTo(map);
+        const safeLayer = L.geoJSON(log.safe_route_geojson, {
+          style: { color: '#10b981', weight: 6, opacity: 0.95 }
+        }).addTo(map);
+        routeLayers.push(primaryCompromised, safeLayer);
+        map.fitBounds(safeLayer.getBounds(), { padding: [50, 50] });
+      }
+
+      // 4. Render Mandi Cards
+      const best = data.mandi_assessment;
+      const mandiGrid = document.getElementById('mandiGrid');
+      mandiGrid.innerHTML = `
+        <div class="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/40 col-span-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-emerald-400 font-bold text-xs uppercase tracking-wide">🏆 Recommended Optimal Terminal</span>
+            <span class="text-emerald-300 font-bold text-sm">₹${best.effective_realized_rate_per_qtl} / Qtl</span>
+          </div>
+          <div class="text-sm font-semibold text-white">${best.optimal_market} (${best.target_district})</div>
+          <div class="text-xs text-slate-400 mt-1">Expected Total Net Revenue: <strong class="text-white">₹${Math.round(best.expected_net_revenue_inr).toLocaleString('en-IN')}</strong></div>
+          <div class="mt-2 text-[11px] text-emerald-300 bg-emerald-950/50 p-2 rounded border border-emerald-500/20">
+            ${best.strategic_recommendations[0]?.financial_gain || best.strategic_recommendations[0]?.action}
+          </div>
+        </div>
+      `;
+
+      if (best.msp_benchmarking) {
+        const mb = document.getElementById('mspBadge');
+        mb.innerText = `Govt MSP: ₹${best.msp_benchmarking.msp_rate}/Qtl (${best.msp_benchmarking.spread_above_msp >= 0 ? '+' : ''}₹${best.msp_benchmarking.spread_above_msp})`;
+        mb.className = best.msp_benchmarking.spread_above_msp >= 0 ? "text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800" : "text-xs bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-800";
+      }
+
+      // 5. Render Multimodal Pathology
+      if (data.vision_assessment) {
+        const va = data.vision_assessment;
+        const dCard = document.getElementById('diagnosisCard');
+        dCard.classList.remove('hidden');
+        dCard.innerHTML = `
+          <div class="flex items-center justify-between">
+            <strong class="text-amber-400 text-xs">${va.detected_pathology || "Plant Pathology Evaluation"}</strong>
+            <span class="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">${va.severity_level || "DIAGNOSED"}</span>
+          </div>
+          <p class="text-slate-300 text-[11px]">${va.symptoms_identified || va.raw_analysis || ""}</p>
+          ${va.ipm_treatments ? `
+            <div class="bg-slate-900 p-2 rounded border border-slate-800 text-[10px] space-y-1">
+              <div><strong class="text-teal-400">Chemical IPM:</strong> ${va.ipm_treatments.chemical}</div>
+              <div><strong class="text-emerald-400">Bio/Organic:</strong> ${va.ipm_treatments.organic_biological}</div>
+            </div>
+          ` : ''}
+        `;
+      }
+
+      // 6. Action Checklist
+      const actions = data.climate_assessment.advisories;
+      const cl = document.getElementById('actionChecklist');
+      cl.innerHTML = '';
+      actions.forEach(act => {
+        const c = document.createElement('div');
+        const badgeColor = act.urgency === 'IMMEDIATE' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : (act.urgency === 'HIGH' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700');
+        c.className = "bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-start space-x-2.5";
+        c.innerHTML = `
+          <span class="text-[10px] px-1.5 py-0.5 rounded border font-bold uppercase ${badgeColor} shrink-0 mt-0.5">${act.urgency}</span>
+          <div>
+            <div class="text-slate-200 font-medium text-xs">${act.action}</div>
+            <div class="text-slate-500 text-[10px] mt-0.5">${act.scientific_rationale}</div>
+          </div>
+        `;
+        cl.appendChild(c);
+      });
+
+      lucide.createIcons();
+    }
+
+    function clearMap() {
+      markers.forEach(m => map.removeLayer(m));
+      routeLayers.forEach(l => map.removeLayer(l));
+      markers = [];
+      routeLayers = [];
+    }
+
+    // Auto-deploy on initial load
+    window.onload = () => {
+      deploySwarm();
+    };
+  </script>
+</body>
+</html>
